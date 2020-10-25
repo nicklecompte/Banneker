@@ -53,7 +53,7 @@ let primitiveFunctionToSchemeExpression (f:PrimitiveFunction) (args: Literal lis
         | LTE IntType -> Application ((Constant "<="),consExpression)
         | GT IntType -> Application ((Constant ">"),consExpression)
         | GTE IntType -> Application ((Constant "<="),consExpression)
-        | _ -> failwithf "unsupported primiitive function for w integer arguments: %A" f
+        | _ -> failwithf "unsupported primiitive function for 2 integer arguments: %A" f
     | [Int a] ->
         let endExp = Constant (a.ToString())
         match f with

@@ -1,4 +1,4 @@
-module Tests
+module PrimitiveTests
 
 open System
 open Xunit

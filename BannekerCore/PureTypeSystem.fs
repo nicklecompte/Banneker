@@ -1,5 +1,6 @@
 /// This module essentially defines the "meat" of Banneker's snytax and typechecking.
 module Banneker.PureTypeSystem
+open Primitives
 
 type Name =
     | UserName of string
@@ -7,7 +8,7 @@ type Name =
 
 type Sort = Sort of string
 with
-    member x.StringVal = match x with | Sort s -> s
+    member inline x.StringVal = match x with | Sort s -> s
 
 
 type PureTypeSystem = {
@@ -15,28 +16,34 @@ type PureTypeSystem = {
     axioms : (Sort*Sort) list
     rules : (Sort*Sort*Sort) list
 }
-with
-    member x.IsValid =
-        let sortsFromAxioms = List.concat [(List.map fst (x.axioms)); (List.map snd (x.axioms))] |> List.distinct
-        let sortsFromRules = 
-            List.concat [
-                (List.map (fun (x,_,_) -> x) (x.rules));
-                (List.map (fun (_,x,_) -> x) (x.rules));
-                (List.map (fun (_,_,x) -> x) (x.rules))
-            ]
-            |> List.distinct
-        for s in sortsFromAxioms do
-            if not (List.contains s (x.sorts)) then 
-                (failwith (sprintf "Sort %s was in the axiom set but not in the sort set" (s.StringVal)))
-        for s in sortsFromRules do
-            if not (List.contains s (x.sorts)) then 
-                (failwith (sprintf "Sort %s was in the rules set but not in the sort set" (s.StringVal)))
-        true
+
+type ValidatedPTS =
+    | ValidPTS of PureTypeSystem
+    | InvalidPTS of string
+
+let createPureTypeSystem (sorts:Sort list) (axioms:(Sort*Sort) list) (rules:(Sort*Sort*Sort) list) : ValidatedPTS =
+    let sortsFromAxioms = List.concat [(List.map fst (axioms)); (List.map snd (axioms))] |> List.distinct
+    let sortsFromRules = 
+        List.concat [
+            (List.map (fun (x,_,_) -> x) (rules));
+            (List.map (fun (_,x,_) -> x) (rules));
+            (List.map (fun (_,_,x) -> x) (rules))
+        ]
+        |> List.distinct
+    match List.tryFind (fun s -> not (List.contains s sorts)) sortsFromAxioms with
+    | Some s -> InvalidPTS (sprintf "Sort %s was in the axiom set but not in the sort set" (s.StringVal))
+    | None ->
+        match List.tryFind (fun s -> not (List.contains s sorts)) sortsFromRules with
+        | Some s -> InvalidPTS (sprintf "Sort %s was in the rules set but not in the sort set" (s.StringVal))
+        | None -> ValidPTS {sorts=sorts;axioms=axioms;rules=rules}
+    
 
 let inline ptsContainsAxiom pts (s1,s2) : bool =
     List.contains (s1,s2) (pts.axioms)
 
 type Term = 
+    | Constant of Literal
+    | PrimFn of PrimitiveFunction
     | SortTerm of Sort
     | Variable of TypedVar
     | LambdaAbstraction of argumentName:Name*argumentType:Term * varBody : Term
@@ -51,18 +58,30 @@ type Signature =
     | Data of Term
     | Function of Signature*Signature
 
+let getSignatureOfLiteral lit (typeType:Sort) =
+    let intType = Variable (TypedVar(UserName "Int",SortTerm typeType))
+    match lit with
+    | Int i -> Data intType
+
 let rec getSignatureOfTerm term =
     match term with
     | SortTerm _ -> Some (Data term)
     | Variable(TypedVar(_,t)) -> Some (Data t)
     | Variable(AxiomVar(_,s)) -> Some (Data (SortTerm s))
-    | LambdaAbstraction(a,t,b) ->
+    | LambdaAbstraction(_,t,b) ->
         let bodySig = getSignatureOfTerm b
         let argSig = getSignatureOfTerm t
         match (argSig,bodySig) with
         | (Some aS,Some bS) ->
            Some (Function(aS,bS))
         | _ -> None
+    | PiAbstraction(_,t,b) ->
+        let bodySig = getSignatureOfTerm b
+        let argSig = getSignatureOfTerm t
+        match (argSig,bodySig) with
+        | (Some aS,Some bS) ->
+           Some (Function(aS,bS))
+        | _ -> None        
     | Application(tA,tB) ->
         let aSig = getSignatureOfTerm tA
         let bSig = getSignatureOfTerm tB
@@ -92,18 +111,22 @@ let rec renameVariableInTerm term oldName newName =
 let rec alphaEquivalentTerms termA termB =
     match (termA,termB) with
     | (SortTerm (Sort stA), SortTerm (Sort stB)) -> stA = stB
-    | ((Variable (TypedVar(_,tA))),Variable (TypedVar(_,tB))) ->
+    | ((Variable (TypedVar(a,_))),Variable (TypedVar(b,_))) ->
         // Alpha-equivalence is just about renaming
-        // hence we can drop the name and check alpha-equivalence of the types
-        alphaEquivalentTerms tA tB
-    | ((LambdaAbstraction(_,tA,vA),LambdaAbstraction(_,tB,vB))) -> 
-        let alphaEquivalentArguments = alphaEquivalentTerms tA tB
-        if alphaEquivalentArguments then (alphaEquivalentTerms vA vB) else false
+        // hence we can drop the type and check the names
+        a = b
+    | ((LambdaAbstraction(na,tA,vA),LambdaAbstraction(nb,tB,vB))) -> 
+        let aEquivalentTypes = alphaEquivalentTerms tA tB
+        if aEquivalentTypes then
+            let renamed = renameVariableInTerm vB nb na
+            alphaEquivalentTerms vA renamed
+        else false
     | ((Application (tA,sA)),(Application (tB,sB))) ->
         (alphaEquivalentTerms tA tB) && (alphaEquivalentTerms sA sB)
     | ((PiAbstraction(_,tA,vA),PiAbstraction(_,tB,vB))) -> 
         let alphaEquivalentArguments = alphaEquivalentTerms tA tB
         if alphaEquivalentArguments then (alphaEquivalentTerms vA vB) else false
+    | _ -> false
 
 let rec evalutateTerm term =
     match term with
