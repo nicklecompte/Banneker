@@ -2,3 +2,7 @@
 **/obj/*
 .ionide/*
 .vscode/*
+*.aux
+*.idx
+*.log
+*.toc

@@ -1,0 +1,176 @@
+%% filename: amsbook-template.tex
+%% version: 1.1
+%% date: 2014/07/24
+%%
+%% American Mathematical Society
+%% Technical Support
+%% Publications Technical Group
+%% 201 Charles Street
+%% Providence, RI 02904
+%% USA
+%% tel: (401) 455-4080
+%%      (800) 321-4267 (USA and Canada only)
+%% fax: (401) 331-3842
+%% email: tech-support@ams.org
+%% 
+%% Copyright 2006, 2008-2010, 2014 American Mathematical Society.
+%% 
+%% This work may be distributed and/or modified under the
+%% conditions of the LaTeX Project Public License, either version 1.3c
+%% of this license or (at your option) any later version.
+%% The latest version of this license is in
+%%   http://www.latex-project.org/lppl.txt
+%% and version 1.3c or later is part of all distributions of LaTeX
+%% version 2005/12/01 or later.
+%% 
+%% This work has the LPPL maintenance status `maintained'.
+%% 
+%% The Current Maintainer of this work is the American Mathematical
+%% Society.
+%%
+%% ====================================================================
+
+%    AMS-LaTeX v.2 driver file template for use with amsbook
+%
+%    Remove any commented or uncommented macros you do not use.
+
+\documentclass{amsbook}
+
+%    For use when working on individual chapters
+%\includeonly{}
+
+%    Include referenced packages here.
+\usepackage{adjustbox}
+
+% Via https://tex.stackexchange.com/questions/256553/how-can-i-get-a-better-pound-symbol-number-sign-hash-character
+% Primarily used for making F# not look terrible...
+% \renewcommand\#{\protect\scalebox{0.8}{\protect\raisebox{0.4ex}{\char"0023}}}
+
+\let\oldhash\#%
+\DeclareRobustCommand{\#}{\adjustbox{valign=B,totalheight=.57\baselineskip}{\oldhash}}%
+
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{xca}[theorem]{Exercise}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\numberwithin{section}{chapter}
+\numberwithin{equation}{chapter}
+
+%    For a single index; for multiple indexes, see the manual
+%    "Instructions for preparation of papers and monographs:
+%    AMS-LaTeX" (instr-l.pdf in the AMS-LaTeX distribution).
+\makeindex
+
+\begin{document}
+
+\frontmatter
+
+\title{Banneker: A Programming Language With Combinatorial-Homotopic Types}
+
+%    Remove any unused author tags.
+
+%    author one information
+\author{Nicholas LeCompte}
+\address{Boston, MA}
+\email{nicholas.lecompte.professional@gmail.com}
+
+\subjclass[2021]{Type theory, programming languages}
+
+\keywords{}
+
+\date{}
+
+\begin{abstract}
+
+    In this monograph we detail a purely algebraic-combinatorial formulation of the ideas in homotopy type theory, by way of adding structure to the standard pure type system.
+
+    These ideas are implemented in the programming language Banneker, a functional-first language with dependent types and row polymorphism. We give a technical overview of the implementation, including a bootstrap compiler written in F\#.
+
+\end{abstract}
+
+\maketitle
+
+%    Dedication.  If the dedication is longer than a line or two,
+%    remove the centering instructions and the line break.
+%\cleardoublepage
+%\thispagestyle{empty}
+%\vspace*{13.5pc}
+%\begin{center}
+%  Dedication text (use \\[2pt] for line break if necessary)
+%\end{center}
+%\cleardoublepage
+
+%    Change page number to 6 if a dedication is present.
+\setcounter{page}{4}
+
+\tableofcontents
+
+%    Include unnumbered chapters (preface, acknowledgments, etc.) here.
+% \include{}
+
+\mainmatter
+%    Include main chapters here.
+
+\chapter{The Combinatorial Type System}
+
+\section{Overview of pure type systems}
+
+We present the canonical definition of a \emph{computational} pure type system with \emph{definitions}, loosely following \cite{ClassicalPTS97} and \cite{PTSWithDefinitions}. Computational pure type systems are distinct only from ``standard'' pure type systems by the explicit identification of constants, providing ``computational content,'' and we identify the concepts in our treatment below.
+
+\begin{definition}
+    A \emph{pure type system} is a tuple $(V,C,S,\mathcal{U},\Gamma)$
+    \begin{itemize}
+        \item $V$ is a set of objects called \emph{variables},
+        \item $C$ is a set of objects called \emph{constants}, with $V \cap C = \emptyset$, 
+        \item $\mathcal{S}$ is a triple $(\mathcal{S},\mathcal{A},\mathcal{R})$ where
+        \begin{itemize}
+            \item $\mathcal{S}$ is a set of objects called \emph{sorts},
+            \item $\mathcal{A} \subset \mathcal{S}\times\mathcal{S}$, and is called the \emph{axioms}.
+            \item $\mathcal{R} \subset \mathcal{S}^3$, and is called the \emph{rules}.
+        \end{itemize}
+        \item $\mathcal{U}$ is a set of \emph{pseudoterms}, and $\mathcal{D}$ is a set of \emph{definitions}, defined inductively by 
+            \begin{equation*}
+                \mathcal{U} = V\ |\ C\ |\ \mathcal{S}\ |\ \mathcal{U}\ \mathcal{U}\ |\ \lambda V : \mathcal{U}\ .\ \mathcal{U}\ |\ \Pi V : \mathcal{U} .\mathcal{U}
+            \end{equation*}
+            \begin{equation*}
+                \mathcal{D}(\mathcal{U}) \subset V . V \mathcal{U} : \mathcal{S}
+            \end{equation*}
+        Am element $x . y u : s$ of $\mathcal{D}$, called a \emph{definition}, has a \emph{sort} $s$, \emph{type} $x$, and constructor $y u$. 
+        \item $\Gamma \ subset \{a : A\ |\ a,A \in \mathcal{U}\}$ is a \emph{context}, defined inductively by the following rules:
+            \begin{itemize}
+                \item \textbf{Empty} : If $(r_1,r_2)\in\mathcal{R}$, then $r_1 : r_2 \in \Gamma$
+                \item \textbf{Define} : If $x . y u : s \in \mathcal{D}(\mathcal{U})$, then for all $v \in V$, $v : x \in \Gamma$
+                    %\begin{equation*}
+                    %    
+                    %\end{equation*}
+            \end{itemize}
+    \end{itemize}
+\end{definition}
+
+\chapter{A technical overview of the Banneker bootstrap compiler}
+
+We chose 
+
+\appendix
+%    Include appendix "chapters" here.
+% \include{}
+
+\backmatter
+%    Bibliography styles amsplain or harvard are also acceptable.
+\bibliographystyle{amsalpha}
+\bibliography{References.bib}
+%    See note above about multiple indexes.
+\printindex
+
+\end{document}
+
+%-----------------------------------------------------------------------
+% End of amsbook-template.tex
+%-----------------------------------------------------------------------

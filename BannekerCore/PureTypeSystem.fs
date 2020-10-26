@@ -42,17 +42,25 @@ let inline ptsContainsAxiom pts (s1,s2) : bool =
     List.contains (s1,s2) (pts.axioms)
 
 type Term = 
-    | Constant of Literal
+    // LitConstant and PrimFn exist metatheoretically. 
+    | LitConstant of Literal
     | PrimFn of PrimitiveFunction
     | SortTerm of Sort
     | Variable of TypedVar
     | LambdaAbstraction of argumentName:Name*argumentType:Term * varBody : Term
     | Application of Term*Term
+    // TODO: There is definitely a "combinatorial homotopy" here linking the structure of the sorts
+    // and eta-reducton along Pi vs. Lambda abstractions.
     | PiAbstraction of piArgumentName:Name*piArgumentType:Term * piVarBody : Term
 
 and TypedVar = 
     | TypedVar of Name*Term
     | AxiomVar of Sort*Sort
+with
+    member x.Name = 
+        match x with
+        | TypedVar(n,_) -> n
+        | AxiomVar(s,_) -> UserName (s.StringVal)
 
 type Signature =
     | Data of Term
@@ -65,6 +73,8 @@ let getSignatureOfLiteral lit (typeType:Sort) =
 
 let rec getSignatureOfTerm term =
     match term with
+    | LitConstant _ -> None
+    | PrimFn _ -> None
     | SortTerm _ -> Some (Data term)
     | Variable(TypedVar(_,t)) -> Some (Data t)
     | Variable(AxiomVar(_,s)) -> Some (Data (SortTerm s))
@@ -94,6 +104,8 @@ let rec getSignatureOfTerm term =
 let rec renameVariableInTerm term oldName newName =
     match term with
     | SortTerm _ -> term
+    | PrimFn _ -> term
+    | LitConstant _ -> term
     | Variable(AxiomVar(_,_)) -> term
     | Variable(TypedVar(n,t)) -> 
         if n = oldName then Variable(TypedVar(newName,t)) else term
@@ -105,11 +117,13 @@ let rec renameVariableInTerm term oldName newName =
                     (renameVariableInTerm tB oldName newName))
     | PiAbstraction(p,pt,pb) ->
         let name = if p = oldName then newName else p
-        PiAbstraction(name,pt,pb)
+        PiAbstraction(name,pt,(renameVariableInTerm pb oldName newName))
     
 
 let rec alphaEquivalentTerms termA termB =
     match (termA,termB) with
+    | (LitConstant a,LitConstant b) -> a = b
+    | (PrimFn a, PrimFn b) -> a = b
     | (SortTerm (Sort stA), SortTerm (Sort stB)) -> stA = stB
     | ((Variable (TypedVar(a,_))),Variable (TypedVar(b,_))) ->
         // Alpha-equivalence is just about renaming
@@ -128,11 +142,60 @@ let rec alphaEquivalentTerms termA termB =
         if alphaEquivalentArguments then (alphaEquivalentTerms vA vB) else false
     | _ -> false
 
-let rec evalutateTerm term =
+let rec getFreeVariablesOfTerm term =
     match term with
-    | (Application(LambdaAbstraction(n,tA,vA),tB)) -> 
-        failwithf "not done"
-    | _ -> term
+    | SortTerm _ -> []
+    | Variable(TypedVar(n,t)) -> [TypedVar(n,t)]
+    | Variable(AxiomVar(_,_)) -> []
+    | LambdaAbstraction(n,t,b) ->
+        let bodyVars = getFreeVariablesOfTerm b
+        List.filter (fun x ->  not (x.Name = n)) bodyVars
+    // Same logic as lambda
+    | PiAbstraction(n,t,b) ->
+        let bodyVars = getFreeVariablesOfTerm b
+        List.filter (fun x ->  not (x.Name = n)) bodyVars        
+    | Application(tA,tB) ->
+        // not looking at types yet
+        let varsA = getFreeVariablesOfTerm tA |> Set
+        let varsB = getFreeVariablesOfTerm tB |> Set
+        let intersection = Set.intersect varsA varsB
+        Set.difference (Set.union varsA varsB) intersection
+        |> Set.toList
+    | LitConstant _ -> []
+    | PrimFn f -> []
+        // match f with
+        // | Add IntType -> [
+        //     TypedVar(MachineGenName("a",0),Constant IntType);
+        //     TypedVar(MachineGenName("b",0),Constant IntType)
+        //     ]
+        // | Sub IntType -> [
+        //     TypedVar(MachineGenName("a",0),Constant IntType);
+        //     TypedVar(MachineGenName("b",0),Constant IntType)
+        //     ]
+
+
+let rec applyTerm termA termB : Term =
+    match termA with
+    | LambdaAbstraction(n,t,b) ->
+        match b with
+        // An odd case but if so this is just a constant.
+        | SortTerm _ -> b
+        // We ignore the type here - the typechecker will make sure 
+        // TODO: Make this a Term option?
+        | Variable(TypedVar(nam,_)) ->
+            match nam = n with
+            | true -> termB
+            | false -> b
+        | 
+
+let rec betaEquivalentTerms termA termB =
+    match (termA,termB) with
+    | (SortTerm (Sort stA), SortTerm (Sort stB)) -> stA = stB
+    | ((Variable (TypedVar(a,_))),Variable (TypedVar(b,_))) ->
+        // Beta-equivalence is just about renaming
+        // hence we can drop the type and check the names
+        a = b
+
 
 type Context = {
     pts : PureTypeSystem
@@ -165,6 +228,7 @@ let rec checkIfWellTyped (typedVar: TypedVar) (context: Context) : CheckedContex
                 ErrorCtx ("")
     | TypedVar(_,t) -> // don't care about the name
         match t with
+        | PrimFn _ -> failwith "not done"
         | SortTerm s -> match List.contains s (context.pts.sorts) with
                         | true -> VerifiedCtx context
                         | false -> ErrorCtx (sprintf "The sort %s does not exist in the context." (s.StringVal))
