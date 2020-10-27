@@ -1,4 +1,4 @@
-module Banneker.Primitives
+module BuiltinPrimitives
 
 open System
 open Utils

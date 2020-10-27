@@ -11,6 +11,7 @@
     <Compile Include="Primitives.fs" />
     <Compile Include="PureTypeSystem.fs" />
     <Compile Include="Scheme.fs" />
+    <Compile Include="Lexer.fs" />
     <Compile Include="Parser.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

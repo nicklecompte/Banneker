@@ -1,6 +1,6 @@
-module Banneker.Scheme
+module Scheme
 
-open Banneker.Primitives
+open BuiltinPrimitives
 
 type SchemeExpression =
     | Constant of string

@@ -1,6 +1,7 @@
 /// This module essentially defines the "meat" of Banneker's snytax and typechecking.
-module Banneker.PureTypeSystem
-open Primitives
+module PureTypeSystem
+open BuiltinPrimitives
+open Utils
 
 type Name =
     | UserName of string
@@ -186,7 +187,7 @@ let rec applyTerm termA termB : Term =
             match nam = n with
             | true -> termB
             | false -> b
-        | 
+        | _ -> notImpl()
 
 let rec betaEquivalentTerms termA termB =
     match (termA,termB) with

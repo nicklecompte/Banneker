@@ -124,14 +124,17 @@
 
 We present the canonical definition of a \emph{computational} pure type system with \emph{definitions}, loosely following \cite{ClassicalPTS97} and \cite{PTSWithDefinitions}. Computational pure type systems are distinct only from ``standard'' pure type systems by the explicit identification of constants, providing ``computational content,'' and we identify the concepts in our treatment below.
 
+In general our conception of a pure type system is rather ``chatty,'' explicitly incorporating 
+
+
 \begin{definition}
-    A \emph{pure type system} is a tuple $(V,C,S,\mathcal{U},\Gamma)$
+    A \emph{pure type system} is a tuple $(V,C,S,\mathcal{U},\mathcal{D},\Gamma,\equiv)$
     \begin{itemize}
         \item $V$ is a set of objects called \emph{variables},
         \item $C$ is a set of objects called \emph{constants}, with $V \cap C = \emptyset$, 
-        \item $\mathcal{S}$ is a triple $(\mathcal{S},\mathcal{A},\mathcal{R})$ where
+        \item $S$ is a triple $(\mathcal{S},\mathcal{A},\mathcal{R})$ where
         \begin{itemize}
-            \item $\mathcal{S}$ is a set of objects called \emph{sorts},
+            \item $\mathcal{S}$ is a set of objects called \emph{sorts}, which by abuse of notation is used to identify the triple. 
             \item $\mathcal{A} \subset \mathcal{S}\times\mathcal{S}$, and is called the \emph{axioms}.
             \item $\mathcal{R} \subset \mathcal{S}^3$, and is called the \emph{rules}.
         \end{itemize}
@@ -140,16 +143,25 @@ We present the canonical definition of a \emph{computational} pure type system w
                 \mathcal{U} = V\ |\ C\ |\ \mathcal{S}\ |\ \mathcal{U}\ \mathcal{U}\ |\ \lambda V : \mathcal{U}\ .\ \mathcal{U}\ |\ \Pi V : \mathcal{U} .\mathcal{U}
             \end{equation*}
             \begin{equation*}
-                \mathcal{D}(\mathcal{U}) \subset V . V \mathcal{U} : \mathcal{S}
+                \mathcal{D}(\mathcal{U}) \subset V . \mathrm{Free} \lbrack V , \mathcal{U} \rbrack : \mathcal{S}
             \end{equation*}
+        Here, $\mathrm{Free}\lbrack V , \mathcal{U}\rbrack$ is simply the set of all finite products $(V \times \mathcal{U})^n$.
         Am element $x . y u : s$ of $\mathcal{D}$, called a \emph{definition}, has a \emph{sort} $s$, \emph{type} $x$, and constructor $y u$. 
-        \item $\Gamma \ subset \{a : A\ |\ a,A \in \mathcal{U}\}$ is a \emph{context}, defined inductively by the following rules:
+        \item $\Gamma \subset \{a : A\ |\ a,A \in \mathcal{U}\}$ is a \emph{context}, defined inductively by the following rules:
             \begin{itemize}
                 \item \textbf{Empty} : If $(r_1,r_2)\in\mathcal{R}$, then $r_1 : r_2 \in \Gamma$
                 \item \textbf{Define} : If $x . y u : s \in \mathcal{D}(\mathcal{U})$, then for all $v \in V$, $v : x \in \Gamma$
                     %\begin{equation*}
                     %    
                     %\end{equation*}
+            \end{itemize}
+        \item $\equiv$ is an equivalence relation on psuedoterms, encompassing the reflexive, transitive, and symmetric closures of the following well-known relations:
+            \begin{itemize}
+                \item \textbf{Syntactic equality}: Objects in $V$, $C$, and $\mathcal{S}$ retain their ``built-in'' notion of equality (e.g. set-theoretic), which is extended component-wise into inductively-defined elements of $\mathcal{U}$ and $\mathcal{D}(\mathcal{U})$. We denote this as $a = b$.
+                \item \textbf{$\alpha$-reduction}: Given an element $x = \lambda v : a . b(x)$ of $\lambda V : \mathcal{U}\ .\ \mathcal{U}$, then $x \rightarrow_{\alpha} y$ if $y = \lambda u : a . b(u)$. That is, $\alpha$-reduction expresses that function objects are ``the same function'' if all we are doing is changing the name of the variable.
+                $\alpha$ reduction is defined similarly for  $\Pi V : \mathcal{U} .\mathcal{U}$ terms.
+                \item \textbf{$\beta$-reduction}
+                \item \textbf{$\eta$-reduction}
             \end{itemize}
     \end{itemize}
 \end{definition}
