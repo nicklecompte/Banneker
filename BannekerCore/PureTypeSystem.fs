@@ -7,40 +7,56 @@ type Name =
     | UserName of string
     | MachineGenName of string * int
 
-type Sort = Sort of string
+type Sort = 
+    | Simple of string
+    // For Calculus of Inductive Constructions, etc
+    // This automatically defines an axiom in a PTS:
+    // Given s = InductiveFamily(t), then (s,t) \in \mathcal{R}
+    | Inductive of root:string*depth:int
 with
-    member inline x.StringVal = match x with | Sort s -> s
+    member inline x.StringVal = 
+        match x with 
+            | Simple s -> s
+            | Inductive(s,i) -> sprintf "%s_%i" s i
+       //     | InductiveFamily f
 
+type PTSAxiom =
+    | Simple of Sort*Sort
+    | Inductive of root:string*lowToHigh:(int -> int)
+
+type PTSRule =
+    | Simple of Sort*Sort
+    | Inductive of root: string * map: (int -> int -> int)
 
 type PureTypeSystem = {
     sorts : Sort list 
-    axioms : (Sort*Sort) list
-    rules : (Sort*Sort*Sort) list
+    axioms : PTSAxiom list
+    rules : PTSRule List
 }
 
 type ValidatedPTS =
     | ValidPTS of PureTypeSystem
     | InvalidPTS of string
 
-let createPureTypeSystem (sorts:Sort list) (axioms:(Sort*Sort) list) (rules:(Sort*Sort*Sort) list) : ValidatedPTS =
-    let sortsFromAxioms = List.concat [(List.map fst (axioms)); (List.map snd (axioms))] |> List.distinct
-    let sortsFromRules = 
-        List.concat [
-            (List.map (fun (x,_,_) -> x) (rules));
-            (List.map (fun (_,x,_) -> x) (rules));
-            (List.map (fun (_,_,x) -> x) (rules))
-        ]
-        |> List.distinct
-    match List.tryFind (fun s -> not (List.contains s sorts)) sortsFromAxioms with
-    | Some s -> InvalidPTS (sprintf "Sort %s was in the axiom set but not in the sort set" (s.StringVal))
-    | None ->
-        match List.tryFind (fun s -> not (List.contains s sorts)) sortsFromRules with
-        | Some s -> InvalidPTS (sprintf "Sort %s was in the rules set but not in the sort set" (s.StringVal))
-        | None -> ValidPTS {sorts=sorts;axioms=axioms;rules=rules}
+// let createPureTypeSystem (sorts:Sort list) (axioms:(Sort*Sort) list) (rules:(Sort*Sort*Sort) list) : ValidatedPTS =
+//     let sortsFromAxioms = List.concat [(List.map fst (axioms)); (List.map snd (axioms))] |> Seq.distinct
+//     let sortsFromRules = 
+//         List.concat [
+//             (List.map (fun (x,_,_) -> x) (rules));
+//             (List.map (fun (_,x,_) -> x) (rules));
+//             (List.map (fun (_,_,x) -> x) (rules))
+//         ]
+//         |> Seq.distinct
+//     match List.tryFind (fun s -> not (Seq.contains s sorts)) sortsFromAxioms with
+//     | Some s -> InvalidPTS (sprintf "Sort %s was in the axiom set but not in the sort set" (s.StringVal))
+//     | None ->
+//         match Seq.tryFind (fun s -> not (Seq.contains s sorts)) sortsFromRules with
+//         | Some s -> InvalidPTS (sprintf "Sort %s was in the rules set but not in the sort set" (s.StringVal))
+//         | None -> ValidPTS {sorts=sorts;axioms=axioms;rules=rules}
     
 
-let inline ptsContainsAxiom pts (s1,s2) : bool =
-    List.contains (s1,s2) (pts.axioms)
+// let inline ptsContainsAxiom pts (s1,s2) : bool =
+//     Seq.contains (s1,s2) (pts.axioms)
 
 type Term = 
     // LitConstant and PrimFn exist metatheoretically. 
@@ -50,9 +66,10 @@ type Term =
     | Variable of TypedVar
     | LambdaAbstraction of argumentName:Name*argumentType:Term * varBody : Term
     | Application of Term*Term
-    // TODO: There is definitely a "combinatorial homotopy" here linking the structure of the sorts
+    // TODO: 
+    // There is definitely a "combinatorial homotopy" here linking the structure of the sorts
     // and eta-reducton along Pi vs. Lambda abstractions.
-    | PiAbstraction of piArgumentName:Name*piArgumentType:Term * piVarBody : Term
+    // | PiAbstraction of piArgumentName:Name*piArgumentType:Term * piVarBody : Term
 
 and TypedVar = 
     | TypedVar of Name*Term
@@ -86,6 +103,7 @@ let rec getSignatureOfTerm term =
         | (Some aS,Some bS) ->
            Some (Function(aS,bS))
         | _ -> None
+(*
     | PiAbstraction(_,t,b) ->
         let bodySig = getSignatureOfTerm b
         let argSig = getSignatureOfTerm t
@@ -93,6 +111,7 @@ let rec getSignatureOfTerm term =
         | (Some aS,Some bS) ->
            Some (Function(aS,bS))
         | _ -> None        
+*)
     | Application(tA,tB) ->
         let aSig = getSignatureOfTerm tA
         let bSig = getSignatureOfTerm tB
@@ -116,16 +135,19 @@ let rec renameVariableInTerm term oldName newName =
     | Application(tA,tB) -> 
         Application((renameVariableInTerm tA oldName newName),
                     (renameVariableInTerm tB oldName newName))
+(*
     | PiAbstraction(p,pt,pb) ->
         let name = if p = oldName then newName else p
         PiAbstraction(name,pt,(renameVariableInTerm pb oldName newName))
+*)    
     
 
 let rec alphaEquivalentTerms termA termB =
     match (termA,termB) with
     | (LitConstant a,LitConstant b) -> a = b
     | (PrimFn a, PrimFn b) -> a = b
-    | (SortTerm (Sort stA), SortTerm (Sort stB)) -> stA = stB
+    | (SortTerm (Sort.Simple stA), SortTerm (Sort.Simple stB)) -> stA = stB
+    | (SortTerm (Sort.Inductive(stA,dA)), SortTerm (Sort.Inductive(stB,dB))) -> stA = stB && dA = dB
     | ((Variable (TypedVar(a,_))),Variable (TypedVar(b,_))) ->
         // Alpha-equivalence is just about renaming
         // hence we can drop the type and check the names
@@ -203,6 +225,9 @@ type Context = {
     vars : TypedVar list
 }
 
+let isVariableInContext typedVar context =
+    List.contains (context.vars) typedVar
+
 type CheckedContext =
     | VerifiedCtx of Context
     | ErrorCtx of string
@@ -216,9 +241,9 @@ let rec checkIfWellTyped (typedVar: TypedVar) (context: Context) : CheckedContex
         | true -> VerifiedCtx context
         | false -> 
             // Extra branching here only for debugging purposes.
-            match List.contains s1 (context.pts.sorts) with
+            match Seq.contains s1 (context.pts.sorts) with
             | true ->
-                if List.exists (fun (x1,_) -> s1 = x1) (context.pts.axioms) then
+                if Seq.exists (fun (x1,_) -> s1 = x1) (context.pts.axioms) then
                     ErrorCtx (sprintf "The sort %s does not exist in the context." (s1.StringVal))
                     // TODO: Fill this in!
                     // Need to check s2 doens't exist in context sorts and s1:s2 not in context rulez
@@ -230,7 +255,7 @@ let rec checkIfWellTyped (typedVar: TypedVar) (context: Context) : CheckedContex
     | TypedVar(_,t) -> // don't care about the name
         match t with
         | PrimFn _ -> failwith "not done"
-        | SortTerm s -> match List.contains s (context.pts.sorts) with
+        | SortTerm s -> match Seq.contains s (context.pts.sorts) with
                         | true -> VerifiedCtx context
                         | false -> ErrorCtx (sprintf "The sort %s does not exist in the context." (s.StringVal))
         // ex t = Type : Kind

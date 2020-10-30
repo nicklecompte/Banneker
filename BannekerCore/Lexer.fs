@@ -1,5 +1,7 @@
 module Lexer
 
+open Utils
+
 type BannekerToken =
     | Let
     | Module
@@ -49,8 +51,7 @@ let stringToReservedTerm str =
     | "//" -> ValueSome Comment
     | "(*" -> ValueSome BlockCommentStart
     | "*)" -> ValueSome BlockCommentEnd
-    | _ -> 
-        ValueNone
+    | _ -> ValueNone
 
 let rec getIndentationLevel (str:string) =
     if str.Length < 2 then 0

@@ -1,0 +1,102 @@
+\section{Some philosophical remarks on syntactic and propositional equality}
+
+In \cite{FashionableMathematics}, Kevin Buzzard makes the following (subjective) remark about the univalent foundations program in homotopy type theory:
+
+    ``I initially rejected univalent mathematics completely because its “abuse” (as I initially saw it) of the equality symbol was so obscene to me. Mathematicians use the equality symbol (i.e. A = B) to mean two things. Firstly, they use it to mean that A and B are actually the same thing (for example $\sum_{n\geq1}\frac{1}{n^2}=\frac{\pi^2}{6}$). Secondly, they sometimes use it to mean that A and B are canonically isomorphic, and no I am not going to tell you what this means, but I can assure you that if $R$ is a ring and $(0)$ is the zero ideal, then $R/(0)=R$. We don’t care that they’re not literally the same set, they are \emph{equal}.''
+
+While Buzzard did not go into further detail about their discomfort, my first thought was back to my undergraduate abstract algebra courses, where it was 
+
+The difficulty of equality is something familiar to mathematicians, physicists, and computer scientists. Conceptually 
+
+\begin{itemize}
+    \item \textbf{Computer science} - The equality confusion most familiar to programmers is that of reference vs. value equality. If the strings $x = \texttt{"cat"}$ and $y = \texttt{"cat"}$ occupy different memory in the heap and have different pointers, are they the same string? 
+\end{itemize}
+
+\section{Overview of pure type systems}
+
+We present our definition of a \emph{computational} pure type system with \emph{definitions}, loosely following the manner of extensions in \cite{ClassicalPTS97} and \cite{PTSWithDefinitions}, from the classic \cite{BarendregtPTS1}. We also integrate ideas from \cite{RhoCalculus}.
+
+ 
+\begin{definition}\label{puretypesysdef}
+    A \emph{pure type system} is a tuple $(V,S,\mathcal{U},\mathcal{D},\Gamma,\cong)$
+    \begin{itemize}
+        \item $V$ is a set of objects called \emph{variables},
+        
+%        \item $C$ is a set of objects called \emph{constants}, with $V \cap C = \emptyset$, 
+% We probably won't need to treat constants as anythng other than variables the compiler recognizes.
+% If we change our mind, be sure to put it back in \mathcal{U}, etc        
+        \item $S$ is a triple $(\mathcal{S},\mathcal{A},\mathcal{R})$ where
+        \begin{itemize}
+            \item $\mathcal{S}$ is a set of objects called \emph{sorts}.
+            \item $\mathcal{A} \subset \mathcal{S}\times\mathcal{S}$, and is called the \emph{axioms}.
+            \item $\mathcal{R} \subset \mathcal{S}^3$, and is called the \emph{rules}.
+        \end{itemize}
+        
+        \item $\mathcal{U}$ is a set of \emph{pseudoterms}, defined inductively by 
+            \begin{equation*}
+                \mathcal{U} = V\ |\ \mathcal{S}\ |\ \mathcal{U}\ \mathcal{U}\ |\ \lambda V : \mathcal{U}\ .\ \mathcal{U}\  %|\ \Pi V : \mathcal{U} .\mathcal{U}
+            \end{equation*}
+        If $x \in \mathcal{V}$, we write $b(x) \in \mathcal{U}$ to mean that $b = x$ as elements of $\mathcal{V}$, or that $x$ appears in either an applicative ($\mathcal{U} \mathcal{U}$) or $\lambda$ construction.
+
+        \item $\Gamma \subset \{x : A\ |\ v\in\mathcal{V},A \in \mathcal{U}\}$ is a \emph{context}, defined inductively by the following rules:
+            \begin{itemize}
+                \item \textbf{Empty} : If $(r_1,r_2)\in\mathcal{R}$, then $r_1 : r_2 \in \Gamma$
+                \item \textbf{Start} : Given $s\in\mathcal{S}$ and $x : s \in \Gamma$, then for all $v \in \mathcal{V} - \{a\ |\ a \in \mathcal{V} \land \exists A\in\mathcal{U} \ \mathrm{such \ that\ } a : A \in \Gamma \}$, $v : x \in \Gamma$.
+                \begin{itemize}
+                    \item The set $\mathcal{V} - \{a\ |\ a \in \mathcal{V} \land \exists A\in\mathcal{U} \ \mathrm{such \ that\ } a : A \in \Gamma \}$ is called the \emph{fresh variables of} $\Gamma$. 
+                \end{itemize}
+                    %\begin{equation*}
+                    %    
+                    %\end{equation*}
+            \end{itemize}
+        
+            \item $\cong$ is an equivalence relation on psuedoterms, encompassing the reflexive, transitive, and symmetric closures of the following well-known relations:
+            \begin{itemize}
+                \item \textbf{Syntactic equality}: Objects in $V$, $C$, and $\mathcal{S}$ retain their ``built-in'' notion of equality (e.g. set-theoretic), which is extended component-wise into inductively-defined elements of $\mathcal{U}$. We denote this as $a \equiv b$.
+                \begin{itemize}
+                    \item It is important to note that syntactic equality exists \emph{metatheoretically}. As a trivial but illustrative example, suppose we have $\texttt{Type} \in \mathcal{S}$ and $\texttt{Nat},\texttt{nat},+ \in \mathcal{V}$. Let $a = \lambda x:\texttt{Nat} . (x + x)$ and $b = \lambda x: \texttt{nat} . (x + x)$. If our programming language's parser is case-sensitive, then these are different terms and $a !\equiv b$ (e.g. $\texttt{Nat}$ and $\texttt{nat}$ are different types). However, for purely user-facing reasons, we might have a case-insensitive parser, in which case these are literally the same object and $a \equiv b$.
+                    \item The relation $\equiv$ is an \emph{assertion}, not a \emph{judgment}. Its validity cannot be checked in any pure type system, but rather by inspecting the source code of the parser, checking  asking the editor if a seeming mistake is a typographical error, and so on.
+                    \item While this seems pedantic, clarity about the notion of equality is % TODO: FILL THIS IN!!!
+                \end{itemize} 
+                \item \textbf{$\alpha$-reduction}: Given an element $x = \lambda v : a . b(x)$ of $\lambda V : \mathcal{U}\ .\ \mathcal{U}$, then $x \rightarrow_{\alpha} y$ if $y = \lambda u : a . b(u)$. That is, $\alpha$-reduction expresses that function objects are ``the same function'' if all we are doing is changing the name of the variable.
+                %$\alpha$ reduction is defined similarly for  $\Pi V : \mathcal{U} .\mathcal{U}$ terms.
+                \item \textbf{$\beta$-reduction}
+                \item \textbf{$\eta$-reduction}
+            \end{itemize}
+    \end{itemize}
+\end{definition}
+
+\section{Equality in pure type systems}
+
+
+
+\section{The type-adjacency graph of a PTS}
+
+\section{The free group of definitions from a pure type system}
+
+Let $\mathcal{U}$ be the set of pseudoterms for a pure type system with sorts $\mathcal{S}$. Let $\mathrm{Free}\lbrack V , \mathcal{U}\rbrack$ be the set of all finite products $(V \times \mathcal{U})^n$.
+Am element $x . y u : s$ of $\mathcal{D}$, called a \emph{definition}, has a \emph{sort} $s$, \emph{type} $x$, and constructor $y u$. 
+
+% Example to illustrate what I am getting at
+% let MyType : Type =
+%   | Standard
+%   | IntIndexed of Int
+%   | StrIndexed of String
+% In \mathcal{D} an element here might be (MyType . Standard \emptyset : Type) or (MyType . IntIndexed 5 : Type)
+% In a "free group" sense we have "sort inverses" Type^{-1}, "type inverses" MyType^{-1}, "constructor inverses" Standard^{-1} and IntIndexed^{-1}, and "argument inverses" 5^-1.
+% Some programming languages seem natural out of this: for instance, pattern matching is like applying type/sort inverses. 
+% With respect to the context, you know you are "in" the sort of Types and "in" the type 
+% Can the typechecking rules be integrated into this group structure? How does ths related to strong normalization?
+% Perhaps we can view typechecking as group actions on the free group generated by the actual definitions in the context?
+% Substituton => inverse action of (\lambda x: f(x))[x=a] is just dropping the substitution
+% Is substitution associative? What even is the action?
+% A group element a \in FG[V,U]...
+% Trying to reconcile the lambda / pi calculus - this seems like the rho calculus
+% only enriched with algebraic structure inhereted from PTS?
+% The idea of the rho calculus is an extension of syntactic identity and pattern matching
+% to a depdent type theory without separate pi / lambda constructors.
+
+
+\section{Combinatorial homotopies}
+
+We largely follow \cite{CombinatorialHomotopyLectures} % https://www-fourier.ujf-grenoble.fr/~sergerar/Papers/Trieste-Lecture-Notes.pdf

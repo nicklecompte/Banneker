@@ -1,0 +1,106 @@
+\documentclass{amsbook}
+
+\def\version{0.0.1}
+
+%    For use when working on individual chapters
+\includeonly{combinatorial-type-system}
+
+\usepackage{adjustbox}
+
+% Via https://tex.stackexchange.com/questions/256553/how-can-i-get-a-better-pound-symbol-number-sign-hash-character
+% Primarily used for making F# not look terrible...
+% \renewcommand\#{\protect\scalebox{0.8}{\protect\raisebox{0.4ex}{\char"0023}}}
+\let\oldhash\#%
+\DeclareRobustCommand{\#}{\adjustbox{valign=B,totalheight=.57\baselineskip}{\oldhash}}%
+
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{xca}[theorem]{Exercise}
+
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\numberwithin{section}{chapter}
+\numberwithin{equation}{chapter}
+
+%    For a single index; for multiple indexes, see the manual
+%    "Instructions for preparation of papers and monographs:
+%    AMS-LaTeX" (instr-l.pdf in the AMS-LaTeX distribution).
+\makeindex
+
+\begin{document}
+
+\frontmatter
+
+\title{Banneker: A Programming Language With Combinatorial-Homotopic Types}
+
+\author{Nicholas LeCompte}
+\address{Boston, MA}
+\email{nicholas.lecompte.professional@gmail.com}
+
+\subjclass[2021]{Type theory, programming languages}
+
+\keywords{}
+
+\date{2020 \\ \version}
+
+\begin{abstract}
+
+    In this monograph we detail a purely algebraic-combinatorial formulation of the ideas in homotopy type theory, by way of adding structure to the standard pure type system.
+
+    These ideas are implemented in the programming language Banneker, a functional-first language with dependent types and row polymorphism. We give a technical overview of the implementation, including a bootstrap compiler written in F\#.
+
+\end{abstract}
+
+\maketitle
+
+%    Dedication.  If the dedication is longer than a line or two,
+%    remove the centering instructions and the line break.
+%\cleardoublepage
+%\thispagestyle{empty}
+%\vspace*{13.5pc}
+%\begin{center}
+%  Dedication text (use \\[2pt] for line break if necessary)
+%\end{center}
+%\cleardoublepage
+
+%    Change page number to 6 if a dedication is present.
+\setcounter{page}{4}
+
+\tableofcontents
+
+%    Include unnumbered chapters (preface, acknowledgments, etc.) here.
+% \include{}
+
+\mainmatter
+%    Include main chapters here.
+
+\chapter{The Combinatorial Type System}
+
+\include{combinatorial-type-system}
+
+
+\chapter{A technical overview of the Banneker bootstrap compiler}
+
+We chose 
+
+\appendix
+%    Include appendix "chapters" here.
+% \include{}
+
+\backmatter
+%    Bibliography styles amsplain or harvard are also acceptable.
+\bibliographystyle{amsalpha}
+\bibliography{References.bib}
+%    See note above about multiple indexes.
+\printindex
+
+\end{document}
+
+%-----------------------------------------------------------------------
+% End of amsbook-template.tex
+%-----------------------------------------------------------------------

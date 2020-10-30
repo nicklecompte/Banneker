@@ -1,0 +1,47 @@
+\documentclass{report}
+
+\def\version{0.0.1}
+
+\usepackage{verbatim}
+
+\begin{document}
+
+\title{Bannker - Technical Specification}
+\author{Nicholas LeCompte}
+\date{2020 \\ \version}
+\maketitle
+
+\begin{abstract}
+    This technical report 
+\end{abstract}
+
+\chapter{Introduction}
+
+\chapter{Module definitions}
+
+A Banneker program is associated to a \emph{module}, which defines the various ``types of types'' used in the program, along with .
+\begin{verbatim}
+module MyProgram = {
+    sorts = {MyType, MyProp}
+    axioms = {(MyProp:MyType)}
+    rules = {
+        (MyType:MyType:MyType),
+        (MyProp:MyType:MyType),
+        (MyType:MyProp:MyProp),
+        (MyProp:MyProp:MyProp)
+    }
+    with_import = {MyOtherProgram}
+}
+\end{verbatim}
+
+The collection (\texttt{sorts},\texttt{axioms},\texttt{rules}) is called a \emph{specification}. Banneker comes with many built-in specifications:
+\begin{itemize}
+    \item $\texttt{untyped}: \texttt{sorts = }$
+    \item $\texttt{simply\_typed}$
+\end{itemize}
+
+One can also define \emph{inductive} families of sorts. A common example is a type hierarchy, eg, $\{\texttt{Type},\texttt{Type} \rightarrow \texttt{Type},\texttt{Type} \rightarrow (\texttt{Type} \rightarrow \texttt{Type}, \ldots \}$
+
+\chapter{Defining new sort instances}
+
+\end{document}
