@@ -2,6 +2,22 @@ module Lexer
 
 open Utils
 
+type BannekerTokenizedResult =
+    /// sorts = {Prop,Type} => SortNames ["Prop", "Type"]
+    | SortNames of string list
+    /// axioms = [{Prop : Type}] -> AxiomDefs [("Prop","Type")]
+    | AxiomDefs of (string*string) list
+    | RuleDefs of (string*string*string) list
+    /// let x : Nat = S Z => LetExpr("x",Some "Nat",ListExpr(VarName "S"; VarName "Z")) 
+    | LetExpr of varName:string*varType:(string option)*body:BannekerTokenizedResult
+    | ModuleName of string
+    | AndExpr of left:BannekerTokenizedResult*right:BannekerTokenizedResult
+    | OrExpr of left:BannekerTokenizedResult*right:BannekerTokenizedResult
+    | FunExpr of varName:string*varType:(string option)*varBody:BannekerTokenizedResult
+    | VarName of string
+    | Parenthesized of BannekerTokenizedResult
+    | ListExpr of BannekerTokenizedResult list
+
 type BannekerToken =
     | Let
     | Module
@@ -14,6 +30,7 @@ type BannekerToken =
     | Rules
     | Forall
     | Exists
+    | Equals
     | Absurd
     | Interface
     | With
@@ -26,8 +43,21 @@ type BannekerToken =
     | Comment
     | BlockCommentStart
     | BlockCommentEnd
+    | NewLine
+    | Whitespace
+    | ErasedMark
 
-let stringToReservedTerm str =
+type LexedBannekerElement =
+    | NewLine
+    | SignificantWhitespace
+    | Comment of string
+    | Variable of string
+    | IfElt of cond:LexedBannekerElement * thenElt:LexedBannekerElement * elseElt:LexedBannekerElement
+    // TODO: Unwrap tuples in lets, etc
+    | LetElt of variableName:string*LexedBannekerElement
+
+
+let stringToToken str =
     match str with
     | "let" -> ValueSome Let
     | "module" -> ValueSome Module
@@ -48,9 +78,13 @@ let stringToReservedTerm str =
     | "(" -> ValueSome Lparen
     | ")" -> ValueSome Rparen
     | "if" -> ValueSome If
-    | "//" -> ValueSome Comment
+    | "//" -> ValueSome BannekerToken.Comment
     | "(*" -> ValueSome BlockCommentStart
     | "*)" -> ValueSome BlockCommentEnd
+    | "\n" -> ValueSome BannekerToken.NewLine
+    | "    " -> ValueSome Whitespace
+    | "\t" -> ValueSome Whitespace
+    | "=" -> ValueSome Equals
     | _ -> ValueNone
 
 let rec getIndentationLevel (str:string) =
@@ -66,24 +100,24 @@ let rec getIndentationLevel (str:string) =
                 | "    " -> 1 + (getIndentationLevel str.[4..])
                 | _ -> 0
 
-type SemanticallyDelimitedBlock =
-    | SingleBlock of string list
-    | NestedBlock of outer:SemanticallyDelimitedBlock * inner:List<SemanticallyDelimitedBlock>
+type BannekerLexingResult =
+    | SuccessfullyLexed of KeyedTree<BannekerToken,string>
 
-let rec splitBySemanticWhitespaceAndDelimiters (str:string) : SemanticallyDelimitedBlock list =
-    let splitByLines = str.Split('\n') |> List.ofArray
-    let withIndentationLevels = List.map (fun x -> (getIndentationLevel x, x)) splitByLines
-    let rec splitCore curlist curindent =
-        match curlist with
-        | [] -> []
-        | (curindent,x) :: [] -> [SingleBlock [x]]
-        | (curindent,x) :: (b,y) :: xs -> failwith "not done"
 
-    splitCore withIndentationLevels 0
+// let rec splitBySemanticWhitespaceAndDelimiters (str:string) : SemanticallyDelimitedBlock list =
+//     let splitByLines = str.Split('\n') |> List.ofArray
+//     let withIndentationLevels = List.map (fun x -> (getIndentationLevel x, x)) splitByLines
+//     let rec splitCore curlist curindent =
+//         match curlist with
+//         | [] -> []
+//         | (curindent,x) :: [] -> [SingleBlock [x]]
+//         | (curindent,x) :: (b,y) :: xs -> failwith "not done"
+
+//     splitCore withIndentationLevels 0
     
 
-let toxenize (str:string) =
-    let blocks = splitBySemanticWhitespaceAndDelimiters str
-    match blocks with
-    | [SingleBlock xs] -> failwith "not done"
-    | NestedBlock(o,xs) :: ys -> failwith "not done"
+// let toxenize (str:string) =
+//     let blocks = splitBySemanticWhitespaceAndDelimiters str
+//     match blocks with
+//     | [SingleBlock xs] -> failwith "not done"
+//     | NestedBlock(o,xs) :: ys -> failwith "not done"

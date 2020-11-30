@@ -7,9 +7,19 @@
 
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="Utils/Stream.fs" />
+    <Compile Include="Utils/BinaryRelation.fs" />
+    <Compile Include="Utils/Tree.fs" />
+    <Compile Include="Utils/Graph.fs" />
     <Compile Include="Common.fs" />
-    <Compile Include="Primitives.fs" />
-    <Compile Include="PureTypeSystem.fs" />
+    <Compile Include="BuiltinPrimitives.fs" />
+    <Compile Include="CombinatorialTypeSystem/Nat.fs" />    
+    <Compile Include="CombinatorialTypeSystem/Name.fs" />
+    <Compile Include="CombinatorialTypeSystem/BasicTypes.fs" />
+    <Compile Include="CombinatorialTypeSystem/Term.fs" />
+    <Compile Include="CombinatorialTypeSystem/Equality.fs"/>    
+    <Compile Include="CombinatorialTypeSystem/TypeChecker.fs" />
+    <Compile Include="Backend.fs" />
     <Compile Include="Scheme.fs" />
     <Compile Include="Lexer.fs" />
     <Compile Include="Parser.fs" />

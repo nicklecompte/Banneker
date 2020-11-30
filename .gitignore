@@ -6,3 +6,5 @@
 *.idx
 *.log
 *.toc
+.fake
+.ionide
