@@ -23,4 +23,5 @@ type Name =
     // third_func has name UserName "third_func"! How the from .. import .. works.
     // but lexer will decode that and it's not necessary for the user if the function is public and the module is "export all public"
     // }
+    // TODO: Should this be in CombinatorialTypeSystem?
     | NamespaceQualified of ns:Name*namedObject:Name

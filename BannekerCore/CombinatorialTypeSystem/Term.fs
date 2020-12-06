@@ -5,15 +5,15 @@ open BasicTypes
 open BuiltinPrimitives
 open Nat
 
-/// Terms in a PTS are defined recursively below.
+/// Terms in a CTS are defined recursively below.
 /// Note that by abuse of notation we are calling lambda-preterms Terms.
 /// Their alpha- and beta- equivalence is used to define the actual PTS terms
 /// used in type-checking, etc.
 type Term =
-    /// Many primitives, sorts, etc, have "empty" bodies.
-    | Empty
-    /// Unit term
-    | Unit 
+    /// 
+    | EmptyTerm
+    /// Many primitives, sorts, etc, have unit-term bodies.
+    | UnitTerm
     /// LitConstant and PrimFn exist metatheoretically. 
     /// LitConstant are all backend (Scheme) values.
     | LitConstant of Literal
@@ -23,13 +23,16 @@ type Term =
     /// We have things like "let List : * -> *" which is interpreted _ _ : (Inductive "*" 1) 
     | SortTerm of Sort
     /// Constructors are also Terms.
+    /// data Void = 
+    ///     <=> DataDefinition(UserName "Void",SortTerm Type,(UserName "",Empty))
     /// TODO: Go into further detail about type vs. data in paper
-    /// TODO: Named arguments in this? Maybe just a frontend issue?
-    | DataDefinition of typeTerm:Term*constructors:((Name*Term) list)
+    | DataDefinition of dataName:Name*typeTerm:Term*constructor:(Name*Term)
     /// Wrapper for TypedVar.
     /// A TypedVar might be a sort relation (Type : Kind),
     /// but it's more interesting when it's TypedVar(name,typeVal,bodyVal).
     | Variable of TypedVar
+    // TODO: Do we need this in the core language.
+    | BoundName of Name
     | PiAbstraction of argumentName:Name*argumentType:Term * varBody : Term
     | Application of Term*Term
 
@@ -43,6 +46,41 @@ with
         | TypedVar(n,_,_) -> n
         | AxiomVar(s,_) -> sortToName s
 
+/// CompleteTypeDefinitions are a bit tautological in a CTS context -
+/// it is simply the union of all DataConstructors(name,term,(nameA,termA)) with 
+/// the same nameA it is well-typed if they have the same termA.
+/// But it is useful to separate this out into its own construction for the compiler. 
+type CompleteTypeDefinition = | Constructors of List<Name*Term*(Name*Term)>
+with
+    member x.ToTermList =
+        match x with 
+        | Constructors xs ->
+            match xs with
+            | [] -> [EmptyTerm]
+            | _ -> List.map (fun (n,t,(na,ta)) -> DataDefinition(n,t,(na,ta))) xs
+
+
+let rec isTypeDefinition : Term -> bool = fun t ->
+    match t with
+    | DataDefinition(_) -> true
+    | Application(DataDefinition(_),tb) -> isTypeDefinition tb
+    | _ -> false
+
+let natName : Name = UserName "Nat"
+let zeroName : Name = UserName "Z"
+let succName : Name = UserName "S"
+
+/// Nats are a fundamental builtin to a CTS
+let ctsNatType : CompleteTypeDefinition =
+    Constructors [
+        (natName,SortTerm Type,(zeroName,UnitTerm));
+        (natName,SortTerm Type,(succName,BoundName natName))
+    ]
+
+let rec fSharpNatToCTSNat (n:Nat) : Term =
+    match n with
+    | Z -> Application(BoundName zeroName,UnitTerm)
+    | S x -> Application(BoundName succName, fSharpNatToCTSNat x)
 
 /// Interface for F# objects that can be expressed as Terms
 type ITermable =

@@ -33,6 +33,7 @@ type BannekerToken =
     | Equals
     | Absurd
     | Interface
+    | AutoDerive
     | With
     | Member
     | Match
@@ -46,6 +47,13 @@ type BannekerToken =
     | NewLine
     | Whitespace
     | ErasedMark
+    // TODO: Think about implementation of `trivial` attribute (%trivial?)
+    // TODO: for lemmas/etc. The idea is to avoid developer pain with type errors
+    // TODO: such as "xs ++ [] != xs" since you "forgot" appendRightNil rewrite.
+    // TODO: Trivial would automatically apply these rewrites, then output what
+    // TODO: steps it took, or throw an error if it couldn't find appropriate
+    // TODO: rewrites in the context.
+    | Trivial
 
 type LexedBannekerElement =
     | NewLine
