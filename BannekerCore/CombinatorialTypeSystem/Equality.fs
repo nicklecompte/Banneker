@@ -22,12 +22,12 @@ let rec alphaEquivalentTerms termA termB =
         // Alpha-equivalence is just about renaming
         // hence we can drop the type and check the names
         a = b
-    | ((PiAbstraction(na,tA,vA),PiAbstraction(nb,tB,vB))) -> 
-        let aEquivalentTypes = alphaEquivalentTerms tA tB
-        if aEquivalentTypes then
-            let renamed = renameVariableInTerm vB nb na
-            alphaEquivalentTerms vA renamed
-        else false
+    // | ((PiAbstraction(na,tA,vA),PiAbstraction(nb,tB,vB))) -> 
+    //     let aEquivalentTypes = alphaEquivalentTerms tA tB
+    //     if aEquivalentTypes then
+    //         let renamed = renameVariableInTerm vB nb na
+    //         alphaEquivalentTerms vA renamed
+    //    else false
     | ((Application (tA,sA)),(Application (tB,sB))) ->
         (alphaEquivalentTerms tA tB) && (alphaEquivalentTerms sA sB)
     | _ -> false

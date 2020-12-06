@@ -20,7 +20,7 @@ with
             |> Seq.toList
             |> List.collect(fun a -> x.relations a |> List.map(fun b -> (a,b)))
 
-type AdjacencyMatrix(relation:BinaryRelation<'T>) =
+type AdjacencyMatrix<'T>(relation:BinaryRelation<'T>) =
     member x.Name = notImpl()
 
 [<AutoOpen>]

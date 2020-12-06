@@ -19,7 +19,6 @@
     <Compile Include="CombinatorialTypeSystem/Term.fs" />
     <Compile Include="CombinatorialTypeSystem/Equality.fs"/>    
     <Compile Include="CombinatorialTypeSystem/InductiveView.fs" />
-    <Compile Include="CombinatorialTypeSystem/TypeChecker.fs" />
     <Compile Include="Backend.fs" />
     <Compile Include="Scheme.fs" />
     <Compile Include="Lexer.fs" />

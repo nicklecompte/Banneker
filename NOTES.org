@@ -1,0 +1,64 @@
+#+title: Banneker development notes
+#+author: Nick LeCompte
+
+* Theory
+** CTS core language
+*** TODO Investigate theory and interface of InductiveView
+- [ ] Should SelfRecursive return a term?
+  For instance, inductiveView(x :: xs) should return SelfRecursive xs
+  instead of SelfRecursive (len xs)
+- [ ] Current approach is {terms with a computale InductiveView} <=> {terms which are well-typed in a "reasonable" type system"}
+  Is this well posed?
+  Is it a good idea?
+
+*** TODO Do we need a specific Term construction for Pi-calculus?
+I don't believe we currently do. 
+#+BEGIN_EXAMPLE
+type NatVect (n:Nat) (a:Type) : Type =
+   | Empty : NatVect Z a
+   | Cons of a * NatVect n a : NatVect (S n) a
+#+END_EXAMPLE
+corresponds to the two Term instances
+#+BEGIN_SRC fsharp
+DataDefinition(
+    UserName "NatVect",
+    Application(ctsNatTypeTerm,ctsTypeTypeTerm,ctsTypeTypeTerm),
+    (UserName "Empty",Application(
+        Unit,
+        Application(BoundName(
+            UserName "NatVect",
+            Application(ctsNatTypeTerm,ctsTypeTypeTerm,ctsTypeTypeTerm)
+        ),ctsZero,someInstanceType))
+#+END_SRC
+*** TODO How are we going to implement pattern matching?
+I think it will be something like
+#+BEGIN_EXAMPLE
+type Vect (a : A) (B: Type) : Type =
+   | Singleton of {pf: inductiveView(a) = BaseCase} -> B 
+#+END_EXAMPLE
+
+*** TODO PTS sort semantics? Or keep the simple CoIC universe we're currently using in the F# implementation?
+I am beginning to think that the full PTS is strictly unnecessary for the investigation
+
+** Inductive view
+
+* BannekerCore
+
+** Utils
+*** TODO Finish 
+
+** CombinatorialTypeSystem core language
+
+** Banneker higher-level language
+
+** Lexer/Parser
+
+** Scheme compilation
+
+* BannekerCoreTests
+
+* Documentation
+
+* Misc
+
+** TODO Organize org-mode notes and task list

@@ -31,13 +31,13 @@ type Term =
     /// A TypedVar might be a sort relation (Type : Kind),
     /// but it's more interesting when it's TypedVar(name,typeVal,bodyVal).
     | Variable of TypedVar
-    // TODO: Do we need this in the core language.
-    | BoundName of Name
-    | PiAbstraction of argumentName:Name*argumentType:Term * varBody : Term
+    // BoundNames are allowed Terms, but they can only pass type-checking if a term
+    | BoundName of Name*typeTerm:Term
     | Application of Term*Term
 
 and TypedVar = 
-    /// E.g. let myValue : 
+    /// E.g. let myValue : MyType = MyTypeNatConstructor (S Z)
+    /// <=> TypedVar(UserName "myValue",[the 
     | TypedVar of Name*typ:Term*body:Term
     | AxiomVar of Sort*Sort
 with
@@ -46,12 +46,34 @@ with
         | TypedVar(n,_,_) -> n
         | AxiomVar(s,_) -> sortToName s
 
+let rec listTermToApplication (xs: Term list) : Term =
+    match xs with
+    | [] -> EmptyTerm
+    | t :: [] -> t
+    | t :: (tnext :: ts) -> Application(t,listTermToApplication (tnext :: ts))
+
 /// CompleteTypeDefinitions are a bit tautological in a CTS context -
 /// it is simply the union of all DataConstructors(name,term,(nameA,termA)) with 
 /// the same nameA it is well-typed if they have the same termA.
 /// But it is useful to separate this out into its own construction for the compiler. 
 type CompleteTypeDefinition = | Constructors of List<Name*Term*(Name*Term)>
 with
+    /// Private validation that makes sure a CompleteTypeDefinition really is
+    /// what it says it is. That is, for each element (name,typeTerm,(conName,conArgType)),
+    /// the name and typeTerm are the same **F#** objects, while the conName and conArgType are
+    /// **distinct** F# objects. If not, I screwed something up, not the user.
+    /// A CompleteTypeDefinition is not a Term that could exist and is evaluated
+    /// within the theory - this is a metatheoretical construct which we need to
+    /// be reliably correct.
+    private member x.IsWellFormed =
+        match x with
+        | Constructors [] -> true
+        | Constructors (x :: []) -> true
+        | Constructrs ((nx,ntx,(nconnx,nconargx)) :: ((ny,nty,(nconny,nconargy)) :: ys)) ->
+            if nx = ny and (ntx = nty) then true
+            else failwithf "CompleteTypeDefinition object was given inconsistent constructors: NameA - %A, NameB - %A; typeA - %A, typeB - %A" nx ny ntx nty
+
+    /// Helper method for converting each constructor to a separate Term, for a list of Terms.
     member x.ToTermList =
         match x with 
         | Constructors xs ->
@@ -59,6 +81,23 @@ with
             | [] -> [EmptyTerm]
             | _ -> List.map (fun (n,t,(na,ta)) -> DataDefinition(n,t,(na,ta))) xs
 
+    /// While a type definition is, primitively, a union of DataDefinitions,
+    /// it is syntactically possible to encode this into an single Term
+    /// - a TypedVar where the "head" is the type name / type type,
+    /// and the "tail" is the Application-union of the list of constructors.
+    /// This single term is added to the context (provided each DataDefinition
+    /// is well-typed) when the type is defined.
+    member x.ToSingleTermForType =
+        match x with
+        | Constructors xs ->
+            match xs with
+            | [] -> EmptyTerm
+            | _ ->
+                let consTerm = listTermToApplication(xs)
+                let
+
+let inline dataConstructorToBoundName (n:Name,t:Term,cons:Name*Term) : Term =
+    BoundName((fst cons),Application((snd cons),BoundName(n,t)))
 
 let rec isTypeDefinition : Term -> bool = fun t ->
     match t with
@@ -70,17 +109,19 @@ let natName : Name = UserName "Nat"
 let zeroName : Name = UserName "Z"
 let succName : Name = UserName "S"
 
+let ctsNatType = BoundName(natName, SortTerm Type)
+
 /// Nats are a fundamental builtin to a CTS
-let ctsNatType : CompleteTypeDefinition =
+let ctsNatTypedef : CompleteTypeDefinition =
     Constructors [
         (natName,SortTerm Type,(zeroName,UnitTerm));
-        (natName,SortTerm Type,(succName,BoundName natName))
+        (natName,SortTerm Type,(succName,ctsNatType))
     ]
 
 let rec fSharpNatToCTSNat (n:Nat) : Term =
     match n with
-    | Z -> Application(BoundName zeroName,UnitTerm)
-    | S x -> Application(BoundName succName, fSharpNatToCTSNat x)
+    | Z -> Application(BoundName(zeroName,ctsNatType),UnitTerm)
+    | S x -> Application(BoundName(succName,Application(ctsNatType,ctsNatType)), fSharpNatToCTSNat x)
 
 /// Interface for F# objects that can be expressed as Terms
 type ITermable =
@@ -100,11 +141,6 @@ let rec renameVariableInTerm term oldName newName =
             let typeRewrite = renameVariableInTerm t oldName newName
             let bodyRewrite = renameVariableInTerm b oldName newName
             Variable(TypedVar(n,typeRewrite,bodyRewrite))
-    | PiAbstraction(n,t,b) ->
-        let name = if n = oldName then newName else n
-        let typeRewrite = renameVariableInTerm t oldName newName
-        let bodyRewrite = renameVariableInTerm b oldName newName
-        PiAbstraction(name,typeRewrite,bodyRewrite)
     | Application(tA,tB) -> 
         Application((renameVariableInTerm tA oldName newName),
                     (renameVariableInTerm tB oldName newName))        
@@ -115,9 +151,6 @@ let rec getFreeVariablesOfTerm term =
     | SortTerm _ -> []
     | Variable(TypedVar(n,t,b)) -> [TypedVar(n,t,b)]
     | Variable(AxiomVar(_,_)) -> []
-    | PiAbstraction(n,t,b) ->
-        let bodyVars = getFreeVariablesOfTerm b
-        List.filter (fun x ->  not (x.Name = n)) bodyVars     
     | Application(tA,tB) ->
         // not looking at types yet
         let varsA = getFreeVariablesOfTerm tA |> Set

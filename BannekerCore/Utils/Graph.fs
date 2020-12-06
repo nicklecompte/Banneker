@@ -164,7 +164,7 @@ module Graph =
 
 
     /// Create a graph from any IBinaryRelation<'U>.
-    let fromBinaryRelation<'U when 'U : equality > (rel: #IBinaryRelation<'U>) =
+    let fromBinaryRelation<'U when 'U : equality > (rel: IBinaryRelation<'U>) =
         let vertices = rel.Domain()
         match vertices with
         | [] -> EmptyGraph

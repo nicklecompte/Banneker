@@ -1,0 +1,18 @@
+\chapter{Equality}
+\chapter{Definitional and propositional equality}
+
+
+
+\subsection{Parametricity of type equality}
+
+We present a simple but illustrative picture of the subtleties in equality.
+
+Consider two types $\texttt{type} \mathrm{Z2} = | \mathrm{Zero}\ | \mathrm{One}$ and  $\texttt{type} Bool = | \mathrm{True} | \mathrm{False}$. These are different types, and therefore the images of $\mathrm{Group} : \texttt{Type} \rightarrow \texttt{Type}$ under $\mathrm{Z2}$ and $\mathrm{Bool}$ are different types. But they are isomorphic groups.
+
+% The “identity types” in several of the models arise naturally by exponentiating by an interval object I. I.e., IdA = AI !A × A. It is
+% therefore natural to consider a form of intensional type theory satisfying this condition (that the identity types arise from some single type
+% I).
+
+\section{Equality of proofs}
+
+In [http://www.cs.nott.ac.uk/~psztxa/publ/lics99.pdf] it is proposed that all proofs of an equality proposition $\mathrm{Refl}(a,b)$ be identified as definitionally equal. We believe 

@@ -27,7 +27,7 @@ type CompileExpression =
 
 let rec termToCompileExpr (term:Term) =
     match term with
-    | Empty -> EmptyExpr
+    | EmptyTerm -> EmptyExpr
     | LitConstant l -> LiteralExp l
     | PrimFn f -> CompPrimFn f
     // By the time we've gotten here, Equality

@@ -6,10 +6,11 @@ type Name =
     /// Example: `let myVariable : Nat = S S Z` induces a UserName "myVariable"
     | UserName of string
     /// Sometimes the compiler will need to fill in names
-    /// Example: 
+    /// Example: User => let myAppend {xs : List a} (pf: SomeData xs) (ys : List a) : pf SomeData (xs ++ ys)
+    /// 
     | MachineGenName of Name * int
     /// Imports from other Banneker modules are qualified with the name of the namespace 
-    // Example:
+    // Example: 
     // {
     // import ModuleWithQualfiedAccess
     // import ModuleWithPublicExports
