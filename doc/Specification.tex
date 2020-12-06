@@ -44,4 +44,18 @@ One can also define \emph{inductive} families of sorts. A common example is a ty
 
 \chapter{Defining new sort instances}
 
+\chapter{Classes and contexts}
+
+Among the collection of types in Banneker is a subcollection, which we will call the \emph{category of object-oriented classes}, following the theory specified in the Banneker Technical Overview. Although the term ``class'' is rather overloaded in mathematical logic, here we use it exclusively to mean in the common sense of typical object-oriented languages and paradigms. As in Java, Python, and so on, classes are ``mixes'' of data and functions.
+
+Banneker largely implements members as syntactial sugar. [define the explicit module member that is cretaed]
+
+If $\texttt{Type}$ (resp. $\texttt{Type}_0$) is defined among the sorts, then classes are automatically taken as members of $\texttt{Type}$ (resp. $\texttt{Type}_0$). Otherwise this relation must be specified if classes are used in the program; it may also be overridden:
+
+\begin{equation*}
+    \textt{sorts = [AlgebraicType,Type]}
+    \texttt{rules = [AlgebraicType:Type]}
+    \textt{class = AlgebraicType}
+\end{equation*}
+
 \end{document}

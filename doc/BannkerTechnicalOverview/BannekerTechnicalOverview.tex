@@ -20,9 +20,11 @@
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{example}[theorem]{Example}
 \newtheorem{xca}[theorem]{Exercise}
+\newtheorem{axiom}[theorem]{Axiom}
 
 \theoremstyle{remark}
 \newtheorem{remark}[theorem]{Remark}
+\newtheorem{philcomment}[theorem]{Philosophical comment}
 
 \numberwithin{section}{chapter}
 \numberwithin{equation}{chapter}
@@ -52,7 +54,7 @@
 
     In this monograph we detail a purely algebraic-combinatorial formulation of the ideas in homotopy type theory, by way of adding structure to the standard pure type system.
 
-    These ideas are implemented in the programming language Banneker, a functional-first language with dependent types and row polymorphism. We give a technical overview of the implementation, including a bootstrap compiler written in F\#.
+    These ideas are implemented in the programming language Banneker, a functional-first language with dependent types and row polymorphism. We give a technical overview of the implementation, including a bootstrap compiler written in F\#. As an amusing exercise, the mathematical results in this presentation have themselves been formalized in Banneker, which provides assurances that our work is either generally correct or catastrophically wrong.
 
 \end{abstract}
 
@@ -79,10 +81,86 @@
 \mainmatter
 %    Include main chapters here.
 
+\chapter{Preface}
+
+One of the stickiest things about logic in mathematics and computer science is the inevitable collisions with questions of philosophy. Sometimes such questions are of foundational importance (for instance, asserting the metamathematical correctness of certain axiom definitions), but more often they are used to motivate new discussions, illuminate qualitative ideas behind rigorous proofs, and in general may be thought of as ``flavor.'' Throughout the text we will include \emph{philosophical comments}
+
+As an example of how such commentary will be typeset, here is a \emph{philosophical comment}:
+
+\begin{philcomment}
+    Mathematics is a deeply complex physical phenomena dictating the nature of ``cause and effect'' in the observable universe, which is approximated by mathematicians in natural language and social consensus on what constitutes a mathematically correct argument.
+\end{philcomment}
+
+Note that this comment doesn't say anything interesting beyond an assertion that the author isn't particularly spiritual. It is not important to the actual text, but is indicative of the ``tone'' (and lack of rigor) such comments have. 
+
+\chapter{Introduction}
+
+The formulation of type theories in mathematics and computer science serves three related goals:
+
+\begin{enumerate}
+    \item Modelling domain logic in applied mathematics and software development (for instance: units of measure, F \#'s \texttt{Optional<'T>}), etc
+    \item Enforcing primitive datatypes (and more complex datatypes inductively defined from these) for accurate and efficient translation of programs 
+    \item Modelling theories of reasoning upon which to formalize mathematics and quantitative logic (\texttt{int}s and \texttt{uint}s, \texttt{char}s and [literal] \texttt{string}, and so on)
+\end{enumerate}
+
+In a ``greater good'' sense, item 3) is certainly the most compelling. However, it is Accordingly, the language \texttt{Banneker} was designed 
+
+
+\section{Dynamic typing \emph{vs.} dependent typing: why all the hassle?}
+
+One can ascribe to languages like Perl, Python, R, and so on an ``unreasonable effectiveness''
+
+Computers are complex devices, serving a diverse range of human needs. In terms of their functionality as analyses of facts and inferences of those facts, one can think of a spectrum:
+
+% Via https://tex.stackexchange.com/questions/67991/labeled-number-line
+% make it a box like this:
+
+
+% Aid      ^
+% for      | Excel
+% commun-  |      Python
+% -icating |            
+% facts \& |      
+% ideas    |        Idris[little higher] Coq, Agda[little lower]
+%          |    C++ [on different spectrum]
+%          | Assembly
+%          +-------------------->
+%          Aid for rigorous reasoning
+\newcounter{nn}
+\setlength\unitlength{2pt}
+\begin{picture}(100,100)
+
+    \put(10,60){$L_1=114.06$}
+    \put(70,60){$L_2=119.94$}
+    \put(50,30){$\mu$}
+    \put(0,50){\line(1,0){100}}
+    \multiput(10,50)(10,0){9}{\line(0,1){5}}
+    \setcounter{nn}{113}%
+    \multiput(10,40)(10,0){9}{\makebox(0,0){\thenn\stepcounter{nn}}}
+    
+    \thicklines
+    \put(20,50){\circle{3}}
+    \put(80,50){\circle{3}}
+    
+    \linethickness{2pt}
+    \put(20,50){\line(1,0){60}}
+    \end{picture}
+
+\chapter{Combinatorics and constructive set theory}
+
+\include{type-theory-and-set-theory}
+
 \chapter{The Combinatorial Type System}
 
 \include{combinatorial-type-system}
 
+\chapter{Banneker, a general-purpose language with dependent types}
+
+\section{Object-oriented programming, mutability, and structural polymorphism}
+
+\subsection{The category of object-oriented classes}
+
+\subsection{The implicit kind of $\texttt{mutable}$ terms}
 
 \chapter{A technical overview of the Banneker bootstrap compiler}
 

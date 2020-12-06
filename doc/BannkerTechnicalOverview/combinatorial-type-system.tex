@@ -1,16 +1,117 @@
-\section{Some philosophical remarks on syntactic and propositional equality}
+\section{Combinatorial analyses of typed programs}
 
-In \cite{FashionableMathematics}, Kevin Buzzard makes the following (subjective) remark about the univalent foundations program in homotopy type theory:
+% TODO \mathcal{V} is informal, read more set theory and clean it up.
+Let $\mathcal{V}$ be an set called the $variables$, taken as a subset of all sequences from some alphabet $\mathcal{A}$ - the details of this are immaterial for the analysis, but it is helpful to think of $\mathcal{V}$ as a set where, given a finite subset $\mathrm{Bound}\subset\mathcal{V}$, it is easy to find an element $x\in \mathrm{Free} := \mathcal{V} - \mathrm{Bound}$.
 
-    ``I initially rejected univalent mathematics completely because its “abuse” (as I initially saw it) of the equality symbol was so obscene to me. Mathematicians use the equality symbol (i.e. A = B) to mean two things. Firstly, they use it to mean that A and B are actually the same thing (for example $\sum_{n\geq1}\frac{1}{n^2}=\frac{\pi^2}{6}$). Secondly, they sometimes use it to mean that A and B are canonically isomorphic, and no I am not going to tell you what this means, but I can assure you that if $R$ is a ring and $(0)$ is the zero ideal, then $R/(0)=R$. We don’t care that they’re not literally the same set, they are \emph{equal}.''
+In the following we introduce further constructions intended to provide semantic meaning to $\mathcal{V}$. These definitions are inspired by ML-like languages in functional programming, and % TODO:finish this!
 
-While Buzzard did not go into further detail about their discomfort, my first thought was back to my undergraduate abstract algebra courses, where it was 
+\subsection{Inductive type assignments from sorts, axioms, and rules}
 
-The difficulty of equality is something familiar to mathematicians, physicists, and computer scientists. Conceptually 
+Let $\mathcal{S}$ be a set of objects, $\mathcal{S}\cap\mathcal{V}=\emptyset$. 
 
-\begin{itemize}
-    \item \textbf{Computer science} - The equality confusion most familiar to programmers is that of reference vs. value equality. If the strings $x = \texttt{"cat"}$ and $y = \texttt{"cat"}$ occupy different memory in the heap and have different pointers, are they the same string? 
-\end{itemize}
+If $x : s$ and $s\in\mathcal{S}$, we say that $x$ is a \emph{generalized type of sort $S$}. This somewhat weighty term was chosen to avoid confusion around common terms such as ``the type of types.''
+
+Let $\mathcal{A}\subset\mathcal{S}\times\mathcal{S}$ be a set of \emph{axioms} and $\mathcal{R}\subset\mathcal{S}\times\mathcal{S}\times\mathcal{S}$ be a set of \emph{rules}.
+
+\subsubsection{Inductively-defined types from the lowest sort}
+
+Given the triple $\mathcal{S},\mathcal{R},\mathcal{R})$, we can 
+
+\begin{example}
+    Let $\mathcal{S} = \{\mathrm{Prop},\mathrm{Type}\}$, $\mathcal{R} = \{(\mathrm{Prop},\mathrm{Type})\}$, and $\mathcal{A} = \{(\mathrm{Prop},\mathrm{Type},\mathrm{Type})\}$.
+\end{example}
+
+\subsubsection{Function types and implementations}
+
+\subsubsection{Valid definitons for higher sorts}
+
+\section{Association schemes}
+
+Assocation schemes are central objects in algebraic combinatorics[cite], generalizing notions of regularity in graphs.
+
+\begin{definition}
+    Let $X$ be a finite set. Let $\mathrm{Refl} = \{(x,x)\ |\ x\in X\}$. Let $r \subset X\times X$. Define $r^* = \{(y,z)\ |\ (z,y)\in r\}$. For each $x\in X$, define $xr := \{y\in X\ |\ (x,y)\in r \}$.
+
+    Let $A$ be a partition of $X\times X$ with $\emptyset\notin A$ and $\mathrm{Refl}\in A$, and for each $r \in A$, assume $r^* \in A$. Then $(X,A)$ is an \emph{association scheme} if for all $e,f,g\in A$ there exists a positive integer $a_{efg}$ such that for all $y,z\in X$, $(y,z) \in g \Rightarrow | ye \cap zf^{*} | = a_{efg}$.
+\end{definition}
+
+\section{Combinatorial type systems}
+
+\begin{definition}
+    Let $\mathcal{V}$ be a set, identified as the \emph{variables}, and $\mathcal{S} = \{\mathrm{Rel},\mathrm{Type},\mathrm{Kind}_0,\mathrm{Kind}_1...\}$ be the set of \emph{sorts}. For brevity we will sometimes write $\mathcal{S} = \{\mathrm{Kind}_i, i\geq -1 \}$ where $\mathrm{Kind}_{-1} \equiv \mathrm{Type}$.
+
+    Let $\mathbf{0}$ be the \emph{empty term} and $\mathbf{1}$ be the \emph{unit term}. 
+
+    The set $\mathcal{T}$ of \emph{terms} is defined inductively as folllows:
+    \begin{equation*}
+        \mathcal{T} = \mathbf{0}\ | \mathbf{1}\ | \mathcal{S}\ |\ \mathcal{V}\ |\ \mathcal{V} : \mathcal{T}\ = \mathcal{T} |\ \mathrm{data}\ \mathcal{V} : \mathcal{T} = \{\mathcal{V} : \mathcal{T}\} \ |\ \mathcal{T} \mathcal{T}
+    \end{equation*}
+
+    We define a \emph{typing relation on $\mathcal{T}$ with context $\Gamma\subset \{\mathcal{V}\ :\ \mathcal{T} \}$} as follows. First, say a variable $v\in\mathcal{V}$ is \emph{free in $\Gamma$} if $\forall t\in\mathcal{T},\ v:t\notin \Gamma$. 
+
+    Let $x = \mathrm{data}\ v : t = \{a_i : t_i\}$ and $o = a_i (o_i : t_i)$. The \emph{inductive view of $o$} is defined by
+    \begin{equation*}
+        \texttt{inductive_view}(0) = \left\{\begin{array}{lr}
+            \texttt{base_case}, & $v\ \mathrm{free\ in\ } t_i$\\
+            \textt{ind}(o':t), & \mathrm{otherwise} 
+            % for cases like data MyType of Conses int*MyType*MyType, we will have to fix a in-out,l-r order
+            % E.g. Conses (1,Conses 2 BaseCase BaseCase,Conses 3 BaseCase (Conses 4 BaseCase BaseCase)) ->
+            % Conses (1, BaseCase, Conses 3 BaseCase (Conses 4 BaseCase BaseCase))
+            % Conses (1, BaseCase, (Conses 4 BaseCase BaseCase))
+            % Conses (1, BaseCase, BaseCase)
+            % BaseCase
+            % Need to make sure map is well-defined. Not a trivial question.
+            % Actually - what we want is to look at the basis for the free group of the data V : T {V : T} terms.
+            % It *seems* like these terms should always be finitely generated for any context and (finite) data definition.
+            % data Nat =
+            % | Z of 1
+            % | S of Nat
+            % data FreeGroupofType : Type -> 
+        \end{array}
+            \right }
+    \end{equation*}
+
+    
+    \begin{itemize}
+        \item \textbf{Empty} 
+        \begin{equation*}
+        \frac{ }{\Gamma \vdash \mathbf{0}:\mathrm{Type},\ \mathbf{1}:\mathrm{Type},\ \mathbf{1} : \mathbf{1},\ \mathrm{Rel} : \mathrm{Type},\  \mathrm{Type} : \mathrm{Kind}_0,\ \mathrm{Kind}_i : \mathrm{Kind}_{i+1}}
+        \end{equation*}
+        \item \textbf{Intro}
+        \begin{equation*}
+            \frac{v,w,x,y...\mathrm{\ free\ in}\ \Gamma,\ \Gamma \vdash A,B,C..., \Gamma \vdash s\in \mathcal{S}}
+            {\Gamma \vdash \left(\mathrm{data}\ v\ :\ s\ = \{w\ :\ A,\ x\ :\ B  \}\right) }
+        \end{equation*} 
+        \item \textbf{Instance}
+        \begin{equation*}
+            \frac{v\mathrm{\ free\ in}\ \Gamma,\Gamma\vdash(\mathrm{data}\ v\ :\ s\ = X), \{w\ :\ A\}\in X,\Gamma\vdash a:A}
+            {\Gamma\vdash v = w a}    
+        \end{equation*}
+        \item \textbf{Product}
+        \begin{equation*}
+            \frac{\Gamma \vdash A:\mathrm{Kind}_i, x:A, B:\mathrm{Kind}_{j},v \ \mathrm{free\ in\ }\Gamma,j\in\{i,i+1\}}
+            {\Gamma \vdash (\mathrm{data}\ v\ (A ) )}
+        \end{equation*}
+        \item \textbf{Pattern}
+    \end{itemize}
+\end{definition}
+
+Let $(\mathcal{T},\Gamma)$ be a combinatorial type system. 
+
+Define $\mathrm{inductiveView}_{\Gamma} : \mathcal{T}\rightarrow\mathcal{T}$ by
+%         \mathcal{T} = \mathbf{0}\ | \mathbf{1}\ | \mathcal{S}\ |\ \mathcal{V}\ |\ \mathcal{V} : \mathcal{T}\ = \mathcal{T} |\ \mathrm{data}\ \mathcal{V} : \mathcal{T} = \{\mathcal{V} : \mathcal{T}\} \ |\ \mathcal{T} \mathcal{T}
+% $\mathcal{S} = \{\mathrm{Rel},\mathrm{Type},\mathrm{Kind}_0,\mathrm{Kind}_1...\}$
+\begin{equation*}
+    \mathrm{inductiveView}_{\Gamma} \mathbf{0} = \mathbf{0}
+    \mathrm{inductiveView}_{\Gamma} \mathrm{1} = \mathbf{1}
+    \mathrm{inductiveView}_{\Gamma} \mathrm{Type} = \mathbf{1}
+    \mathrm{inductiveView}_{\Gamma} \mathrm{Kind}_0 = \mathrm{Type}
+    \mathrm{inductiveView}_{\Gamma} \mathrm{Kind}_{i+1} = \mathrm{Kind}_i \ \forall i\geq 0
+    \mathrm{inductiveView}_{\Gamma} v = \mathbf{1}\ \forall v\in\mathcal{V}
+    \mathrm{inductiveView}_{\Gamma} v:t_1=t_2 = 
+\end{equation*}
+
+\subsection{Simple constructions for the empty context}
 
 \section{Overview of pure type systems}
 
@@ -45,6 +146,8 @@ We present our definition of a \emph{computational} pure type system with \emph{
                 \begin{itemize}
                     \item The set $\mathcal{V} - \{a\ |\ a \in \mathcal{V} \land \exists A\in\mathcal{U} \ \mathrm{such \ that\ } a : A \in \Gamma \}$ is called the \emph{fresh variables of} $\Gamma$. 
                 \end{itemize}
+                \item \textbf{Equality}
+                \item \textbf{Rewrite}
                     %\begin{equation*}
                     %    
                     %\end{equation*}
@@ -62,6 +165,7 @@ We present our definition of a \emph{computational} pure type system with \emph{
                 %$\alpha$ reduction is defined similarly for  $\Pi V : \mathcal{U} .\mathcal{U}$ terms.
                 \item \textbf{$\beta$-reduction}
                 \item \textbf{$\eta$-reduction}
+                \item \textbf{Equality types}: Given terms $x : A, y : A$, the type $(x \cong_A y)$, written $(x = y)$, is defined in $\Gamma$, generated by the rule $x \cong y \rightarrow \mathrm{Refl} x x : (x = y)$.
             \end{itemize}
     \end{itemize}
 \end{definition}
@@ -100,3 +204,25 @@ Am element $x . y u : s$ of $\mathcal{D}$, called a \emph{definition}, has a \em
 \section{Combinatorial homotopies}
 
 We largely follow \cite{CombinatorialHomotopyLectures} % https://www-fourier.ujf-grenoble.fr/~sergerar/Papers/Trieste-Lecture-Notes.pdf
+
+\section{The combinatorial type system}
+
+\section{The typing graph $\mathbb{T}(\mathcal{T})$}
+
+\begin{definition}
+    Let $\mathcal{T},\Gamma$ be a set of terms and a typing context, as above. The \emph{typing graph} $\mathbb{\Pi}(\mathcal{T})$ is the directed graph with vertex set $\mathcal{T}$ and edges $E$ defined by $E = \{(x,y)\ | \ \Gamma \vdash x:y \}$.
+\end{definition}
+
+\section{The dual typing graph $\mathbb{U}(\mathcal{T})$}
+
+\begin{definition}
+    Let $\mathcal{T},\Gamma$ be a set of terms and a typing context, as above, with sorts $\mathcal{S}$. The \emph{dual typing graph} $\mathbb{T}(\mathcal{T})$ is the directed graph with vertex set $\mathcal{T}$ and edges $E$ defined by $E = \{(x,y)\ | \ \Gamma \vdash x:a:s, y:(a \rightarrow s) \ \}$.
+\end{definition}
+
+\section{Commentary}
+
+One somewhat amusing subjective aspect of using naive finite set theory and combinatorics is that, in the author's experience, it is quite easy to make ``obvious'' errors that are nevertheless ``well-typed'' in the metatheory, which can lead to antecedent errors in reasoning 
+
+On the
+
+This experience is familiar to software developers
