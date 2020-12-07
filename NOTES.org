@@ -3,13 +3,21 @@
 
 * Theory
 ** CTS core language
+
 *** TODO Investigate theory and interface of InductiveView
-- [ ] Should SelfRecursive return a term?
+- [ ] SelfRecursive should return a term
   For instance, inductiveView(x :: xs) should return SelfRecursive xs
   instead of SelfRecursive (len xs)
-- [ ] Current approach is {terms with a computale InductiveView} <=> {terms which are well-typed in a "reasonable" type system"}
-  Is this well posed?
-  Is it a good idea?
+- [ ] Implement a few "interesting" bijections InductiveView <-> Nat
+    - [ ] Which ones have "interesting" topology? (as pseudometric spaces on Nat)
+    - [ ] Potential family of graphs:
+        - Identity graph of loops (alpha-equivalence with syntactic equality of terms)
+        - Distance "1" graph of Terms which are of InductiveView "distance" 1.
+        - [ ] Given a function-as-vector f, what is the matrix "multiplication"
+          of f and the adjacency matrix of these graphs? 
+- [ ] Current approach is {terms with a well-defined InductiveView} <=> {terms which are well-typed in a "reasonable" type system"}
+    - [ ] Is this well posed?
+    - [ ] Is it a good idea?
 
 *** TODO Do we need a specific Term construction for Pi-calculus?
 I don't believe we currently do. 
@@ -28,14 +36,34 @@ DataDefinition(
         Application(BoundName(
             UserName "NatVect",
             Application(ctsNatTypeTerm,ctsTypeTypeTerm,ctsTypeTypeTerm)
-        ),ctsZero,someInstanceType))
+        ),ctsZero,kindTerm))
 #+END_SRC
+
+**** TODO What should the internal representation of "kindTerm" here be?
+It is just the identity function Type -> Type. I believe we can just leave it at that,
+and perhaps even have a special tag for comparison.
+
 *** TODO How are we going to implement pattern matching?
 I think it will be something like
+
 #+BEGIN_EXAMPLE
 type Vect (a : A) (B: Type) : Type =
-   | Singleton of {pf: inductiveView(a) = BaseCase} -> B 
+   | Singleton of {pf: inductiveView(a) = BaseCase} -> B : Vect a B
+   | NestedSelf of {pf : inductiveView(a) = SelfRecursive a'} -> B -> Vect a' B : Vect a B 
+   ...
 #+END_EXAMPLE
+
+is the internal representaton of
+
+#+BEGIN_EXAMPLE
+type Vect... =
+   match inductiveView(a) with
+   | BaseCase -> Singleton of B
+   | SelfRecursive a' -> NestedSelf of B -> Vect a' B
+#+END_EXAMPLE
+
+Unfortunately "functions are vectors" as a way to approach intensional function equality implies
+- pattern matching must be a CTS-theoretic construct, not metatheoretic
 
 *** TODO PTS sort semantics? Or keep the simple CoIC universe we're currently using in the F# implementation?
 I am beginning to think that the full PTS is strictly unnecessary for the investigation
